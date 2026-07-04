@@ -20,6 +20,7 @@ permissions:
 
 jobs:
   update:
+    if: ${{ vars.DOCKERHUB_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
       -
