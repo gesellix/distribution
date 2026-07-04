@@ -36,11 +36,14 @@ RUN --mount=type=bind,target=/src \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=target=/go/pkg/mod,type=cache \
     --mount=type=bind,source=/tmp/.ldflags,target=/tmp/.ldflags,from=version \
-      set -x ; xx-go build -tags "${BUILDTAGS}" -trimpath -ldflags "$(cat /tmp/.ldflags) ${LDFLAGS}" -o /usr/bin/registry ./cmd/registry \
-      && xx-verify --static /usr/bin/registry
+      set -x ; \
+      EXT=$([ "$(xx-info os)" = "windows" ] && echo ".exe" || true) ; \
+      xx-go build -tags "${BUILDTAGS}" -trimpath -ldflags "$(cat /tmp/.ldflags) ${LDFLAGS}" -o /usr/bin/registry${EXT} ./cmd/registry \
+      && xx-verify --static /usr/bin/registry${EXT}
 
 FROM scratch AS binary
-COPY --from=build /usr/bin/registry /
+# registry* matches "registry" on Linux and "registry.exe" on Windows targets.
+COPY --from=build /usr/bin/registry* /
 
 FROM base AS releaser
 ARG TARGETOS
@@ -52,7 +55,7 @@ RUN --mount=from=binary,target=/build \
     --mount=type=bind,source=/tmp/.version,target=/tmp/.version,from=version \
       VERSION=$(cat /tmp/.version) \
       && mkdir -p /out \
-      && cp /build/registry /src/README.md /src/LICENSE . \
+      && cp /build/registry* /src/README.md /src/LICENSE . \
       && tar -czvf "/out/registry_${VERSION#v}_${TARGETOS}_${TARGETARCH}${TARGETVARIANT}.tar.gz" * \
       && sha256sum -z "/out/registry_${VERSION#v}_${TARGETOS}_${TARGETARCH}${TARGETVARIANT}.tar.gz" | awk '{ print $1 }' > "/out/registry_${VERSION#v}_${TARGETOS}_${TARGETARCH}${TARGETVARIANT}.tar.gz.sha256"
 

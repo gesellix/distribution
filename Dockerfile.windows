@@ -1,0 +1,23 @@
+# Windows container (WCOW) image for the registry.
+#
+# This image reuses the cross-compiled registry.exe produced by the Linux
+# `artifact-all` bake target (windows/amd64), so the released binary and the
+# containerized binary are identical. Build it natively on a Windows runner
+# whose OS version matches WINDOWS_VERSION (process isolation), e.g.
+#   docker build -f Dockerfile.windows --build-arg WINDOWS_VERSION=ltsc2022 -t <img> <ctx>
+# where <ctx> contains registry.exe and config.yml alongside this file.
+
+# WINDOWS_VERSION selects the nanoserver base image tag (ltsc2022, ltsc2025).
+ARG WINDOWS_VERSION=ltsc2022
+
+FROM mcr.microsoft.com/windows/nanoserver:${WINDOWS_VERSION}
+
+EXPOSE 5000
+
+ENTRYPOINT ["\\registry.exe"]
+CMD ["serve", "C:\\etc\\distribution\\config.yml"]
+
+# The storage rootdirectory in config.yml (/var/lib/registry -> C:\var\lib\registry)
+# does not collide with the binary at \registry.exe.
+COPY registry.exe /registry.exe
+COPY config.yml /etc/distribution/config.yml
