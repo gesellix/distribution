@@ -6,6 +6,21 @@
 # whose OS version matches WINDOWS_VERSION (process isolation), e.g.
 #   docker build -f Dockerfile.windows --build-arg WINDOWS_VERSION=ltsc2022 -t <img> <ctx>
 # where <ctx> contains registry.exe and config.yml alongside this file.
+#
+# Runtime note: a Windows container's base image OS must match the host's OS, or
+# the container fails to start with "The container operating system does not match
+# the host operating system". See:
+#   https://learn.microsoft.com/en-us/virtualization/windowscontainers/deploy-containers/version-compatibility
+# The multi-arch manifest handles this: a host pulls the variant matching its own
+# OS and architecture (the ltsc2022 and ltsc2025 entries carry distinct os.version
+# values).
+#
+# Prior art for building the registry as a Windows image:
+#   https://github.com/sixeyed/dockerfiles-windows/blob/master/registry/nanoserver/1809/Dockerfile
+#   https://github.com/StefanScherer/dockerfiles-windows/blob/main/registry/Dockerfile
+#   https://github.com/docker/distribution-library-image/pull/42
+#   https://github.com/docker/distribution/pull/2281
+#   https://github.com/olljanat/multi-win-version-aspnet (multiarch Windows images; moby/moby#35247)
 
 # WINDOWS_VERSION selects the nanoserver base image tag (ltsc2022, ltsc2025).
 ARG WINDOWS_VERSION=ltsc2022
