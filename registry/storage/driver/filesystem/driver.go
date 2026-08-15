@@ -148,16 +148,12 @@ func (d *driver) PutContent(ctx context.Context, subPath string, contents []byte
 	defer writer.Close()
 
 	if _, err := io.Copy(writer, bytes.NewReader(contents)); err != nil {
-		if cErr := writer.Cancel(ctx); cErr != nil {
-			return errors.Join(err, cErr)
-		}
-		// Attempt to clean up the temporary file on error.
-		dErr := d.Delete(ctx, tempPath)
-		return errors.Join(err, dErr)
+		// Cancel removes the temporary file.
+		return errors.Join(err, writer.Cancel(ctx))
 	}
 
 	if err := writer.Commit(ctx); err != nil {
-		return err
+		return errors.Join(err, writer.Cancel(ctx))
 	}
 
 	// Atomically replace the target file with the temporary file.
